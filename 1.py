@@ -1,8 +1,10 @@
 # %%
 import itertools
+import numpy
 
 with open("1.input.txt") as infile:
     data =infile.readlines()
+
 testdata = """1721
 979
 366
@@ -10,21 +12,17 @@ testdata = """1721
 675
 1456""".split("\n")
 
-def runnerA(data):
+def runner(data,count=2):
     data = [int(x.strip()) for x in data]
+    return [numpy.prod(x) for x in itertools.combinations(data, count) if sum(x) == 2020][0]
 
-    return [x[0]*x[1] for x in itertools.combinations(data,2) if x[0]+x[1]==2020][0]
+# A
+assert runner(testdata)== 514579
+print(runner(data))
 
-assert runnerA(testdata)== 514579
-print(runnerA(data))
-
-def runnerB(data):
-    data = [int(x.strip()) for x in data]
-
-    return [x[0]*x[1]*x[2] for x in itertools.combinations(data, 3) if x[0]+x[1]+x[2] == 2020][0]
-
-
-assert runnerB(testdata) == 241861950
-
-print(runnerB(data))
+# B
+assert runner(testdata,3) == 241861950
+print(runner(data,3))
 # %%
+
+
