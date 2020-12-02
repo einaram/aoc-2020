@@ -15,16 +15,22 @@ def validatorA(rule, letter, password):
         
 
 def validatorB(rule, letter, password):
-    if sum([password[rule[0]-1] == letter,  password[rule[1]-1] == letter]) == 1:
+    # if sum([password[rule[0]-1] == letter,  password[rule[1]-1] == letter]) == 1:
+    if (password[rule[0]-1] == letter) != (password[rule[1]-1] == letter):
+
         return True
+
+def parseline(row):
+    row = row.split(" ")
+    allowed_range = [int(x) for x in row[0].split("-")]
+    letter = row[1].strip(":")
+    password = row[2]
+    return allowed_range, letter, password
 
 def runner(data, validator= validatorA):
     valid_count = 0
     for row in data:
-        row = row.split(" ")
-        allowed_range = [int(x) for x in row[0].split("-")]
-        letter = row[1].strip(":")
-        password = row[2]
+        allowed_range, letter, password = parseline(row)
         if validator(allowed_range, letter, password):
             valid_count += 1
     return valid_count
@@ -32,11 +38,13 @@ def runner(data, validator= validatorA):
 
 # A
 assert runner(testdata)== 2
+assert runner(data, validatorA) == 643
 print("A:", runner(data))
 
 
 # %%
 assert runner(testdata, validatorB) == 1
+assert runner(data, validatorB) == 388
 print("B:", runner(data, validatorB))
 
 # %%
