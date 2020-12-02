@@ -15,9 +15,10 @@ def validatorA(rule, letter, password):
         
 
 def validatorB(rule, letter, password):
+    # Which is least ununderstandable ;)
     # if sum([password[rule[0]-1] == letter,  password[rule[1]-1] == letter]) == 1:
-    if (password[rule[0]-1] == letter) != (password[rule[1]-1] == letter):
-
+    # if (password[rule[0]-1] == letter) != (password[rule[1]-1] == letter):
+    if (password[rule[0]-1] == letter) ^ (password[rule[1]-1] == letter):
         return True
 
 def parseline(row):
