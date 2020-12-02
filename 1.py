@@ -13,7 +13,7 @@ testdata = """1721
 1456""".split("\n")
 
 def runner(data,count=2):
-    data = [int(x.strip()) for x in data]
+    data = (int(x) for x in data)
     return [numpy.prod(x) for x in itertools.combinations(data, count) if sum(x) == 2020][0]
 
 # A
