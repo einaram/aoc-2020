@@ -24,13 +24,11 @@ def run_single_route(mapdata, xstep=3, ystep=1):
     mapdata = [x.strip() for x in mapdata]
     trees = 0
     x_pos = 0
+    map_width = len(mapdata[0])
     for y_row in mapdata[::ystep]:
-        if y_row[x_pos] == "#":
+        if y_row[x_pos%map_width] == "#":
             trees +=1
-
         x_pos += xstep
-        if x_pos>=len(y_row):
-            x_pos -= len(y_row)  
     return trees
 
 
