@@ -20,7 +20,6 @@ def readfile(datatype):
 
 required_fields = set(["ecl", "pid", "eyr", "hcl",
                        "byr", "iyr", "hgt"])
-optional_fields =set(["cid"])
 
 # A
 def validate_batchA(required_fields, passport_batch):
@@ -59,18 +58,24 @@ def validate_field(field, value):
     valid= False
     validators = {
         'byr': lambda year: validate_year(1920, 2002, year),
-        # iyr(Issue Year) - four digits
-        # at least 2010 and at most 2020.
+
+        # iyr(Issue Year) - four digits at least 2010 and at most 2020.
         'iyr': lambda year: validate_year(2010, 2020, year),
+
         # eyr(Expiration Year) - four digits  at least 2020 and at most 2030.
         'eyr': lambda year: validate_year(2020, 2030, year),
+
         'hgt': validate_height,
+
         # hcl(Hair Color) - a  # followed by exactly six characters 0-9 or a-f.
         'hcl': lambda haircolor: re.match("#[0-9a-fA-F]", haircolor),
+
         # ecl(Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
         'ecl': lambda x: 1 if x in ['amb', 'blu', 'brn', 'gry', 'grn', 'hzl', 'oth'] else 0,
+
         # pid(Passport ID) - a nine-digit number, including leading zeroes.
         'pid': lambda pid: re.match("[0-9]{9}", pid),
+
         # cid(Country ID) - ignored, missing or not.
         'cid': lambda x: True
     }
@@ -85,10 +90,10 @@ def validate_field(field, value):
 
 
 def validate_batchB(required_fields, passport_batch):
-    valid = True
     valid_count = 0
 
     for passport in passport_batch:
+        valid = True
         if not required_fields.issubset(set(passport)):
             valid = False
         for field, value in passport.items():
@@ -106,8 +111,6 @@ assert validate_batchB(required_fields, readfile("test_invalid")) == 0
 
 
 validate_batchB(required_fields, readfile("data"))    
-
-
 
 
 
