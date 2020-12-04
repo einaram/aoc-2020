@@ -9,7 +9,6 @@ def readfile(datatype):
     with open(f"input/4.{datatype}.txt") as infile:
         passports_batch = [row.replace("\n", " ")
                            for row in infile.read().split("\n\n")]
-
     return [split_passport_fields(passport) for passport in passports_batch]
 
 
@@ -30,22 +29,15 @@ def validate_height(height_str):
     # hgt(Height) - a number followed by either cm or in:
     # If cm, the number must be at least 150 and at most 193.
     # If in, the number must be at least 59 and at most 76.
-    valid = False
 
+    # value, unit =  re.match("(\d+)(cm|in)", height_str).groups() # bah, crash when unit is missig
     unit = height_str[-2:].lower()
     value = int(height_str[:-2])  # wrong if no unit
-    if unit == 'cm':
-        if  150 <= value <= 193:
-            valid = True
 
-    elif unit == "in":
-        if 59 <= value <= 76:
-            valid = True
-    return valid
+    return (unit == 'cm' and  150 <= value <= 193) or (unit == 'in' and 59 <= value <= 76)
 
 
 def field_is_valid(field, value):
-    valid = False
     validators = {
         'byr': lambda year: validate_year(1920, 2002, year),
 
