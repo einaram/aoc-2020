@@ -1,17 +1,16 @@
 # %%
 import re
+def split_passport_fields(passport):
+    fields = {x.split(":")[0]: x.split(":")[1]
+              for x in passport.split(" ")}
+    return fields
 
 def readfile(datatype):
     with open(f"input/4.{datatype}.txt") as infile:
-        passports_batch = infile.read().split("\n\n")
-        passports_batch = [x.replace("\n", " ") for x in passports_batch]
-        passports = []
-        for passport in passports_batch:
-            fields = {x.split(":")[0]: x.split(":")[1]
-                      for x in passport.split(" ")}
-            passports.append(fields)
+        passports_batch = [row.replace("\n", " ")
+                           for row in infile.read().split("\n\n")]
 
-    return passports
+    return [split_passport_fields(passport) for passport in passports_batch]
 
 
 required_fields = set(["ecl", "pid", "eyr", "hcl",
@@ -24,14 +23,8 @@ def validate_batchA(required_fields, passport_batch):
 # B
 
 def validate_year(ymin, ymax, year):
-    valid = False
-    try:
-        year = int(year)
-        if year >= ymin and year <= ymax:
-            valid = True
-    except:
-        pass
-    return valid
+    if ymin <= int(year) <= ymax:
+        return True
 
 def validate_height(height_str):
     # hgt(Height) - a number followed by either cm or in:
@@ -42,16 +35,16 @@ def validate_height(height_str):
     unit = height_str[-2:].lower()
     value = int(height_str[:-2])  # wrong if no unit
     if unit == 'cm':
-        if value >= 150 and value <= 193:
+        if  150 <= value <= 193:
             valid = True
 
     elif unit == "in":
-        if value >= 59 and value <= 76:
+        if 59 <= value <= 76:
             valid = True
     return valid
 
 
-def validate_field(field, value):
+def field_is_valid(field, value):
     valid = False
     validators = {
         'byr': lambda year: validate_year(1920, 2002, year),
@@ -76,29 +69,24 @@ def validate_field(field, value):
         # cid(Country ID) - ignored, missing or not.
         'cid': lambda x: True
     }
-    try:
-        valid = validators.get(field)(value)
-    except:
-        raise
-    finally:
-        return valid
+
+    is_valid = validators.get(field)(value)
+    return is_valid
+
+
+def validate_passport(required_fields, passport):
+    valid = True
+    if required_fields.issubset(set(passport)):
+        for field, value in passport.items():
+            if not field_is_valid(field, value):
+                valid = False
+    else:
+        valid = False
+    return valid
 
 def validate_batchB(required_fields, passport_batch):
-    valid_count = 0
-
-    for passport in passport_batch:
-        valid = True
-        if not required_fields.issubset(set(passport)):
-            valid = False
-        for field, value in passport.items():
-            valid_field = validate_field(field, value)
-            if not valid_field:
-                valid = False
-
-        if valid:
-            valid_count += 1
-    print(valid_count)
-    return valid_count
+    valid_passports = [validate_passport(required_fields, passport) for passport in passport_batch]
+    return sum(valid_passports)
 
 assert validate_batchB(required_fields, readfile("test_valid")) == 4
 assert validate_batchB(required_fields, readfile("test_invalid")) == 0
@@ -108,3 +96,5 @@ assert validate_batchB(required_fields, readfile("data")) == 179
 # A
 assert validate_batchA(required_fields, readfile("test")) == 2
 assert validate_batchA(required_fields, readfile("data")) == 204
+
+# %%
