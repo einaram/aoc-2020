@@ -1,6 +1,8 @@
 # %%
-
+import re
 from functools import partial
+
+
 
 def readfile(datatype):
     with open(f"input/4.{datatype}.txt") as infile:
@@ -21,52 +23,100 @@ required_fields = set(["ecl", "pid", "eyr", "hcl",
 optional_fields =set(["cid"])
 
 # A
-def validate_batch(required_fields, passport_batch):
+def validate_batchA(required_fields, passport_batch):
     return sum([1 for x in passport_batch if required_fields.issubset(set(x)) ])
     
 #B
 
-# def validate_fields(passport):
-#     if not required_fields.issubset(set(passport)):
-#         return False
-    
+def validate_year(ymin, ymax, year):
+    valid = False
+    try:
+        year = int(year)
+        if year >= ymin and year <= ymax:
+            valid = True
+    except:
+        pass
+    return valid
 
-#     # def validate_year(year, ymin, ymax):
-#     #     try:
-#     #         year= int(year)
-#     #         if year >= ymin and year <= ymax:
-#     #             return True
-
-#     # validators = {
-#     #     'byr': partial(validate_year(1920, 2002))
-#     #     }
-#     # a = 12
-
-
-# validate_fields(passport_batch[0])
-    # iyr(Issue Year) - four digits
-    # at least 2010 and at most 2020.
-    # eyr(Expiration Year) - four digits
-    # at least 2020 and at most 2030.
+def validate_height(height_str):
     # hgt(Height) - a number followed by either cm or in:
     # If cm, the number must be at least 150 and at most 193.
     # If in, the number must be at least 59 and at most 76.
-    # hcl(Hair Color) - a  # followed by exactly six characters 0-9 or a-f.
-    # ecl(Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
-    # pid(Passport ID) - a nine-digit number, including leading zeroes.
-    # cid(Country ID) - ignored, missing or not.
+    valid = False
+
+    unit = height_str[-2:].lower()
+    value = int(height_str[:-2])  # wrong if no unit
+    if unit == 'cm':
+        if value >= 150 and value <= 193:
+            valid = True
+
+    elif unit == "in":
+        if value >= 59 and value <= 76:
+            valid = True
+    return valid
+
+def validate_field(field, value):
+    valid= False
+    validators = {
+        'byr': lambda year: validate_year(1920, 2002, year),
+        # iyr(Issue Year) - four digits
+        # at least 2010 and at most 2020.
+        'iyr': lambda year: validate_year(2010, 2020, year),
+        # eyr(Expiration Year) - four digits  at least 2020 and at most 2030.
+        'eyr': lambda year: validate_year(2020, 2030, year),
+        'hgt': validate_height,
+        # hcl(Hair Color) - a  # followed by exactly six characters 0-9 or a-f.
+        'hcl': lambda haircolor: re.match("#[0-9a-fA-F]", haircolor),
+        # ecl(Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
+        'ecl': lambda x: 1 if x in ['amb', 'blu', 'brn', 'gry', 'grn', 'hzl', 'oth'] else 0,
+        # pid(Passport ID) - a nine-digit number, including leading zeroes.
+        'pid': lambda pid: re.match("[0-9]{9}", pid),
+        # cid(Country ID) - ignored, missing or not.
+        'cid': lambda x: True
+    }
+    try:
+        valid =validators.get(field)(value)
+    except:
+        raise
+    finally:
+        return valid
+
+
+
+
+def validate_batchB(required_fields, passport_batch):
+    valid = True
+    valid_count = 0
+
+    for passport in passport_batch:
+        if not required_fields.issubset(set(passport)):
+            valid = False
+        for field, value in passport.items():
+            valid_field = validate_field(field, value)
+            if not valid_field:
+                valid = False
+        if valid:
+            valid_count +=1
+    print(valid_count)
+    return valid_count
+             
+
+assert validate_batchB(required_fields, readfile("test_valid")) == 4
+assert validate_batchB(required_fields, readfile("test_invalid")) == 0
+
+
+validate_batchB(required_fields, readfile("data"))    
+
+
 
 
 
 
 # A
-assert validate_batch(required_fields, readfile("test")) == 2
-assert validate_batch(required_fields, readfile("data")) == 204
+assert validate_batchA(required_fields, readfile("test")) == 2
+assert validate_batchA(required_fields, readfile("data")) == 204
 # print("A:", runner(data)) 
 
 
-# B 
-validate_batch(required_fields, readfile("test"))
-validate_batch(required_fields, readfile("data"))
 
 # %%
