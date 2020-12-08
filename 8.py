@@ -37,7 +37,7 @@ class GameConsole():
         curr_idx = self.idx
         if self.used_calls[curr_idx]:
             self.exit_code = END_OF_INSTRUCTION
-            raise StopIteration(END_OF_INSTRUCTION)
+            raise StopIteration
           
         self.call_instr()
         self.used_calls[curr_idx] = True
@@ -46,28 +46,22 @@ class GameConsole():
             self.instr[self.idx] #raises at end of list
         except Exception as E:
             self.exit_code = INSTRUCTION_FINNISHED
-            raise StopIteration(INSTRUCTION_FINNISHED)
+            raise StopIteration
         return self.accumulator
     def run(self):
+        """When to not use an iterator :)"""
         for innstruction in self:
             pass
-        return self.exit_code
+        return self.accumulator, self.exit_code
+
 def part1():
     gameconsole = GameConsole(parse_input())
-    gameconsole.run()
-    return gameconsole.accumulator
+    accum, err = gameconsole.run()
+    return accum
 assert part1() == 1331
 
 
 # Part 2
-def part2_runner(input_):
-    gameconsole = GameConsole(input_)
-    gameconsole.run()
-    if gameconsole.exit_code == END_OF_INSTRUCTION:
-        return None
-    elif gameconsole.exit_code == INSTRUCTION_FINNISHED:
-        return gameconsole.accumulator
-
 def part2():
     instr = parse_input()
     changes = {'nop': 'jmp',
@@ -75,8 +69,12 @@ def part2():
     for change_idx, new_op in [(i, changes[item[0]]) for i, item in enumerate(instr) if item[0] in changes]:
         instr_tmp = copy.deepcopy(instr)
         instr_tmp[change_idx][0] = new_op
-        gamecon_exitcode = part2_runner(instr_tmp)
-        if gamecon_exitcode:
-            return gamecon_exitcode
+
+        gameconsole = GameConsole(instr_tmp)
+        accum, err = gameconsole.run()
+        if err == INSTRUCTION_FINNISHED:
+            return accum
+    else:
+        return None
 
 assert part2() == 1121 
