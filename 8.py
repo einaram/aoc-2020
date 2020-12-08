@@ -1,3 +1,5 @@
+import copy
+
 def parse_input(datatype="input"):
     with open(f"input/8.{datatype}.txt") as infile:
         return [[x.split()[0], int(x.split()[1])] for x in infile.read().split("\n")]
@@ -58,19 +60,19 @@ assert part1() == 1331
 # Part 2
 def part2_runner(input_):
     gameconsole = GameConsole(input_)
-    try:
-        while next(gameconsole): pass
-    except StopIteration:
-        if gameconsole.exit_code == END_OF_INSTRUCTION:
-            return None
-        elif gameconsole.exit_code == INSTRUCTION_FINNISHED:
-            return gameconsole.accumulator
+    for innstruction in gameconsole:
+        pass
+    if gameconsole.exit_code == END_OF_INSTRUCTION:
+        return None
+    elif gameconsole.exit_code == INSTRUCTION_FINNISHED:
+        return gameconsole.accumulator
 
 def part2():
     instr = parse_input()
-    for change_idx in [i for i, item in enumerate(instr) if item[0] in ['jmp', 'nop']]:
-        instr_tmp = [x.copy() for x in instr]
-        instr_tmp[change_idx][0] = 'jmp' if instr_tmp[change_idx][0] == 'nop' else 'nop'
+    changes = {'nop': 'jmp', 'jmp': 'nop'}
+    for change_idx, new_op in [(i, changes[item[0]]) for i, item in enumerate(instr) if item[0] in changes]:
+        instr_tmp = copy.deepcopy(instr)
+        instr_tmp[change_idx][0] = new_op
         gamecon_exitcode = part2_runner(instr_tmp)
         if gamecon_exitcode:
             return gamecon_exitcode
