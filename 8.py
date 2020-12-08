@@ -3,14 +3,19 @@ def parse_input(datatype="input"):
         return [[x.split()[0], int(x.split()[1])] for x in infile.read().split("\n")]
 
 
+class EndOfInstruction(Exception):
+    pass
+
+class InstructionsFinnished(Exception):
+    pass
+
 class GameConsole():
     def __init__(self, instr) -> None:
         self.accumulator = 0
         self.idx = 0
         self.last_acc = 0
         self.instr = instr
-        self.instr_len = len(self.instr)
-        self.total_calls = 0
+        self.used_calls = [False]*len(instr)
 
     def acc(self, arg):
         self.accumulator += int(arg)
@@ -22,31 +27,25 @@ class GameConsole():
     def nop(self,arg):
         self.idx +=1
 
-    def next1(self):
-        curr_idx = self.idx
-        getattr(self, self.instr[self.idx][0])(
-            self.instr[self.idx][1])
-        print(self.last_acc, self.accumulator)
-
-        if self.instr[self.idx] == None:
-            print("ACC5")
-            exit()
-
+    def call_instr(self):
         self.last_acc = self.accumulator
-        self.instr[curr_idx] = None
-
-    def next2(self):
-        if self.total_calls == self.instr_len:
-            raise Exception("end of instructions")
-        self.total_calls += 1
-        
         getattr(self, self.instr[self.idx][0])(
             self.instr[self.idx][1])
+
+        
+    def next(self):
+        curr_idx = self.idx
+        if self.used_calls[curr_idx]:
+            raise EndOfInstruction
+          
+        self.call_instr()
+        self.used_calls[curr_idx] = True
+
         try:
-            self.instr[self.idx] #raises at en of list
+            self.instr[self.idx] #raises at end of list
         except Exception as E:
-            print("end of list. Acc:", self.accumulator)
-            raise E
+            print("End of list. Acc:", self.accumulator)
+            raise InstructionsFinnished
 
 # TODO rewrite with __next__()
 
@@ -55,27 +54,33 @@ def part1():
     gameconsole = GameConsole(parse_input())
     while True:
         try:
-            gameconsole.next1()
-        except:
+            gameconsole.next()
+        except Exception as e:
+            print(e)
+            print("Done", gameconsole.last_acc, gameconsole.accumulator)
             break
-# part1()
+    return gameconsole.accumulator
+assert part1() == 1331
 # Part 2
-
 
 def part2_runner(input_):
     gameconsole = GameConsole(input_)
     i = 0
     while True:
         try:
-            gameconsole.next2()
-        except:
+            gameconsole.next()
+        except EndOfInstruction:
             break
+        except InstructionsFinnished as E:
+            return gameconsole.accumulator
 
 def part2():
     instr = parse_input()
     for change_idx in [i for i, item in enumerate(instr) if item[0] in ['jmp', 'nop']]:
         instr_tmp = [x.copy() for x in instr]
         instr_tmp[change_idx][0] = 'jmp' if instr_tmp[change_idx][0] == 'nop' else 'nop'
-        part2_runner(instr_tmp)
-part2()
+        gamecon_exitcode = part2_runner(instr_tmp)
+        if gamecon_exitcode:
+            return gamecon_exitcode
+assert part2() == 1121 
 # 1121
