@@ -48,11 +48,13 @@ class GameConsole():
             self.exit_code = INSTRUCTION_FINNISHED
             raise StopIteration(INSTRUCTION_FINNISHED)
         return self.accumulator
-
+    def run(self):
+        for innstruction in self:
+            pass
+        return self.exit_code
 def part1():
     gameconsole = GameConsole(parse_input())
-    for innstruction in gameconsole:
-        pass
+    gameconsole.run()
     return gameconsole.accumulator
 assert part1() == 1331
 
@@ -60,8 +62,7 @@ assert part1() == 1331
 # Part 2
 def part2_runner(input_):
     gameconsole = GameConsole(input_)
-    for innstruction in gameconsole:
-        pass
+    gameconsole.run()
     if gameconsole.exit_code == END_OF_INSTRUCTION:
         return None
     elif gameconsole.exit_code == INSTRUCTION_FINNISHED:
@@ -69,7 +70,8 @@ def part2_runner(input_):
 
 def part2():
     instr = parse_input()
-    changes = {'nop': 'jmp', 'jmp': 'nop'}
+    changes = {'nop': 'jmp',
+               'jmp': 'nop'}
     for change_idx, new_op in [(i, changes[item[0]]) for i, item in enumerate(instr) if item[0] in changes]:
         instr_tmp = copy.deepcopy(instr)
         instr_tmp[change_idx][0] = new_op
