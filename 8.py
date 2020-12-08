@@ -9,6 +9,8 @@ class GameConsole():
         self.idx = 0
         self.last_acc = 0
         self.instr = instr
+        self.instr_len = len(self.instr)
+        self.total_calls = 0
 
     def acc(self, arg):
         self.accumulator += int(arg)
@@ -34,6 +36,10 @@ class GameConsole():
         self.instr[curr_idx] = None
 
     def next2(self):
+        if self.total_calls == self.instr_len:
+            raise Exception("end of instructions")
+        self.total_calls += 1
+        
         getattr(self, self.instr[self.idx][0])(
             self.instr[self.idx][1])
         try:
@@ -45,31 +51,31 @@ class GameConsole():
 # TODO rewrite with __next__()
 
 
-
-
 def part1():
     gameconsole = GameConsole(parse_input())
     while True:
-        gameconsole.next1()
+        try:
+            gameconsole.next1()
+        except:
+            break
 # part1()
 # Part 2
 
 
-def part2(input_):
+def part2_runner(input_):
     gameconsole = GameConsole(input_)
     i = 0
     while True:
-        gameconsole.next2()
-        i +=1
-        if i == 100000:
-            print("stopping at max")
+        try:
+            gameconsole.next2()
+        except:
             break
 
-
-instr = parse_input()
-for change_idx in [i for i, item in enumerate(instr) if item[0] in ['jmp', 'nop']]:
-    instr_tmp = [x.copy() for x in instr]
-    instr_tmp[change_idx][0] = 'jmp' if instr_tmp[change_idx][0] == 'nop' else 'nop'
-    part2(instr_tmp)
-
+def part2():
+    instr = parse_input()
+    for change_idx in [i for i, item in enumerate(instr) if item[0] in ['jmp', 'nop']]:
+        instr_tmp = [x.copy() for x in instr]
+        instr_tmp[change_idx][0] = 'jmp' if instr_tmp[change_idx][0] == 'nop' else 'nop'
+        part2_runner(instr_tmp)
+part2()
 # 1121
