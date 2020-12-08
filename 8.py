@@ -6,60 +6,50 @@ def parse_input(datatype="input"):
 
 
 INSTRUCTION_FINNISHED = 1
-END_OF_INSTRUCTION = 2
+END_OF_INSTRUCTION_ERR = 2
 
-class GameConsole():
-    def __init__(self, instr) -> None:
-        self.accumulator = 0
-        self.idx = 0
-        self.exit_code = None
-        self.instr = instr
-        self.used_calls = [False]*len(instr)
+def acc(arg, acc, idx):
+    acc += int(arg)
+    idx += 1
+    return acc, idx
 
-    def acc(self, arg):
-        self.accumulator += int(arg)
-        self.idx +=1
+def jmp(arg, acc, idx):
+    idx += arg
+    return acc, idx
 
-    def jmp(self, arg):
-        self.idx += arg
+def nop(arg, acc, idx):
+    idx += 1
+    return acc, idx
 
-    def nop(self,arg):
-        self.idx +=1
+operations = {
+    'acc':acc,
+    'jmp': jmp,
+    'nop':nop}
 
-    def call_instr(self):
-        getattr(self, self.instr[self.idx][0])(
-            self.instr[self.idx][1])
+def run_console(instrs):
+    accum = 0
+    idx = 0
+    used_calls = [False]*len(instrs)
+    err = None
 
-    def __iter__(self):
-        return self
-        
-    def __next__(self):
-        curr_idx = self.idx
-        if self.used_calls[curr_idx]:
-            self.exit_code = END_OF_INSTRUCTION
-            raise StopIteration
-          
-        self.call_instr()
-        self.used_calls[curr_idx] = True
+    while True:
+        curr_idx = idx
+        if used_calls[idx]:
+            err = END_OF_INSTRUCTION_ERR
+            break  
 
+        accum, idx = operations.get(instrs[idx][0])(
+            instrs[idx][1], accum, idx)
+        used_calls[curr_idx] = True
         try:
-            self.instr[self.idx] #raises at end of list
-        except Exception as E:
-            self.exit_code = INSTRUCTION_FINNISHED
-            raise StopIteration
-        return self.accumulator
-    def run(self):
-        """When to not use an iterator :)"""
-        for innstruction in self:
-            pass
-        return self.accumulator, self.exit_code
+            instrs[idx]
+        except:
+            err = INSTRUCTION_FINNISHED
+            break
 
-def part1():
-    gameconsole = GameConsole(parse_input())
-    accum, err = gameconsole.run()
-    return accum
-assert part1() == 1331
+    return err, accum
 
+assert run_console(parse_input())[1] == 1331
 
 # Part 2
 def part2():
@@ -70,11 +60,8 @@ def part2():
         instr_tmp = copy.deepcopy(instr)
         instr_tmp[change_idx][0] = new_op
 
-        gameconsole = GameConsole(instr_tmp)
-        accum, err = gameconsole.run()
+        err, accum = run_console(instr_tmp)
         if err == INSTRUCTION_FINNISHED:
             return accum
-    else:
-        return None
 
 assert part2() == 1121 
