@@ -3,17 +3,14 @@ def parse_input(datatype="input"):
         return [[x.split()[0], int(x.split()[1])] for x in infile.read().split("\n")]
 
 
-class EndOfInstruction(Exception):
-    pass
-
-class InstructionsFinnished(Exception):
-    pass
+INSTRUCTION_FINNISHED = 1
+END_OF_INSTRUCTION = 2
 
 class GameConsole():
     def __init__(self, instr) -> None:
         self.accumulator = 0
         self.idx = 0
-        self.last_acc = 0
+        self.exit_code = None
         self.instr = instr
         self.used_calls = [False]*len(instr)
 
@@ -28,15 +25,17 @@ class GameConsole():
         self.idx +=1
 
     def call_instr(self):
-        self.last_acc = self.accumulator
         getattr(self, self.instr[self.idx][0])(
             self.instr[self.idx][1])
 
+    def __iter__(self):
+        return self
         
-    def next(self):
+    def __next__(self):
         curr_idx = self.idx
         if self.used_calls[curr_idx]:
-            raise EndOfInstruction
+            self.exit_code = END_OF_INSTRUCTION
+            raise StopIteration(END_OF_INSTRUCTION)
           
         self.call_instr()
         self.used_calls[curr_idx] = True
@@ -44,34 +43,27 @@ class GameConsole():
         try:
             self.instr[self.idx] #raises at end of list
         except Exception as E:
-            print("End of list. Acc:", self.accumulator)
-            raise InstructionsFinnished
-
-# TODO rewrite with __next__()
-
+            self.exit_code = INSTRUCTION_FINNISHED
+            raise StopIteration(INSTRUCTION_FINNISHED)
+        return self.accumulator
 
 def part1():
     gameconsole = GameConsole(parse_input())
-    while True:
-        try:
-            gameconsole.next()
-        except Exception as e:
-            print(e)
-            print("Done", gameconsole.last_acc, gameconsole.accumulator)
-            break
+    for innstruction in gameconsole:
+        pass
     return gameconsole.accumulator
 assert part1() == 1331
-# Part 2
 
+
+# Part 2
 def part2_runner(input_):
     gameconsole = GameConsole(input_)
-    i = 0
-    while True:
-        try:
-            gameconsole.next()
-        except EndOfInstruction:
-            break
-        except InstructionsFinnished as E:
+    try:
+        while next(gameconsole): pass
+    except StopIteration:
+        if gameconsole.exit_code == END_OF_INSTRUCTION:
+            return None
+        elif gameconsole.exit_code == INSTRUCTION_FINNISHED:
             return gameconsole.accumulator
 
 def part2():
@@ -82,5 +74,5 @@ def part2():
         gamecon_exitcode = part2_runner(instr_tmp)
         if gamecon_exitcode:
             return gamecon_exitcode
+
 assert part2() == 1121 
-# 1121
