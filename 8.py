@@ -4,7 +4,6 @@ def parse_input(datatype="input"):
     with open(f"input/8.{datatype}.txt") as infile:
         return [[x.split()[0], int(x.split()[1])] for x in infile.read().split("\n")]
 
-
 INSTRUCTION_FINNISHED = 1
 END_OF_INSTRUCTION_ERR = 2
 
@@ -30,25 +29,20 @@ def run_console(instrs):
     accum = 0
     idx = 0
     used_calls = [False]*len(instrs)
-    err = None
-
-    while True:
+    
+    while idx < len(instrs):
         curr_idx = idx
         if used_calls[idx]:
             err = END_OF_INSTRUCTION_ERR
-            break  
+            break
 
         accum, idx = operations.get(instrs[idx][0])(
             instrs[idx][1], accum, idx)
         used_calls[curr_idx] = True
-        try: #When try is faster then len()..
-            instrs[idx]
-        except:
-            err = INSTRUCTION_FINNISHED
-            break
+    else:
+        err = INSTRUCTION_FINNISHED
     return err, accum
 
-assert run_console(parse_input())[1] == 1331
 
 # Part 2
 def part2():
@@ -63,4 +57,6 @@ def part2():
         if err == INSTRUCTION_FINNISHED:
             return accum
 
-assert part2() == 1121 
+if __name__ == "__main__":
+    assert run_console(parse_input())[1] == 1331
+    assert part2() == 1121 
