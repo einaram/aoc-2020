@@ -9,7 +9,7 @@ INSTRUCTION_FINNISHED = 1
 END_OF_INSTRUCTION_ERR = 2
 
 def acc(arg, acc, idx):
-    acc += int(arg)
+    acc += arg
     idx += 1
     return acc, idx
 
@@ -41,12 +41,11 @@ def run_console(instrs):
         accum, idx = operations.get(instrs[idx][0])(
             instrs[idx][1], accum, idx)
         used_calls[curr_idx] = True
-        try:
+        try: #When try is faster then len()..
             instrs[idx]
         except:
             err = INSTRUCTION_FINNISHED
             break
-
     return err, accum
 
 assert run_console(parse_input())[1] == 1331

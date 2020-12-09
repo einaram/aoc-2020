@@ -15,31 +15,19 @@ def part1():
     data = parse_input()
     preamble_length = 25
     for r, row in enumerate(data[preamble_length:]):
-        r = r+preamble_length
-        preamble=get_preamble(data,r, preamble_length)
-        if not row in preamble:
-            break 
-    return row
+        if not row in get_preamble(data, r+preamble_length, preamble_length):
+            return row
+    
 
 assert part1() == 373803594
 
 def part2(infile, requested):
     data = parse_input(infile)
-
-    for i in range(0,500):
-        end= i+2
+    for i in range(2,500):
         for n, _ in enumerate(data):
-            rolling = data[n:n+end]
+            rolling = data[n:n+i]
             if sum(rolling) == requested:
-                z= min(rolling)+max(rolling)
+                return min(rolling)+max(rolling)
 
-        # WIP
-        # x=[data[n+start:n+stop] for n, _ in enumerate(data) if sum(data[n+start:n+stop]) == requested]
-        # if x:
-        #     print("x", min(x)+max(x), z)
-        #     break
-    return z
-
-
-# part2('test', 127)
+assert part2('test', 127) == 62
 assert part2('input', 373803594)  == 51152360
