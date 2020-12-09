@@ -12,11 +12,9 @@ def preamble_combos(data, idx, length):
 
 def part1():
     data = parse_input()
-    preamble_length = 25
-    for r, row in enumerate(data[preamble_length:]):
-        if not row in preamble_combos(data, r+preamble_length, preamble_length):
-            return row
-    
+    pream_l = 25
+    return next(row for r,row in enumerate(data[pream_l:]) if not row in preamble_combos(data, r+pream_l, pream_l)) # life peak oneliner
+
 
 assert part1() == 373803594
 
