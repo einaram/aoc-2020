@@ -27,11 +27,6 @@ def rules1(idx, x, layout, new_layout):
     return new_layout
 
 
-def check_sight(arr):
-    for seat in arr:
-        if seat in (0, 1):
-            return seat
-
 def check_directions(arr,idx):
     directions = {
         'u': (0,-1),
@@ -44,24 +39,21 @@ def check_directions(arr,idx):
         'u_l': (-1,-1)
     }
     count = 0
+    dmax = arr.shape[:]
     for dir in directions.values():
         x,y = idx
         while True:
             x += dir[0]
             y += dir[1]
-            if x < 0 or y < 0:
+            if not (0 <= x < dmax[0]) or not (0 <= y < dmax[1]):
                 break
-            try:
-                if arr[(x,y)] in (0, 1):
-                    count += arr[(x, y)]
-                    break
-            except IndexError:
+            if arr[(x,y)] in (0, 1):
+                count += arr[(x, y)]
                 break
     return count
 
 
 def rules2(idx, x, layout, new_layout):
-
     seen = check_directions(layout, idx)
     if x == 0 and seen == 0:
         new_layout[idx] = 1
@@ -73,18 +65,18 @@ def rules2(idx, x, layout, new_layout):
 def apply_rules(apply_rules, datafile='data'):
     layout = read_rulesfile(datafile)
     while True:
-        new_layout = np.copy(layout)
+        new_l = np.copy(layout)
         for idx, x in np.ndenumerate(layout):
-            new_layout = apply_rules(idx, x, layout, new_layout)
-
+            new_l = apply_rules(idx, x, layout, new_l)
+        # new_l = [apply_rules(idx, x, layout, new_l)
+        #      for idx, x in np.ndenumerate(layout)]
         # print(new_layout)
         # print("__________________________________________")
-        if (np.nan_to_num(new_layout) == np.nan_to_num(layout)).all():
+        if (np.nan_to_num(new_l) == np.nan_to_num(layout)).all():
             print(np.nansum(layout))
             break
-        layout = new_layout
+        layout = new_l
     return np.nansum(layout)
-
 
 
 # P1
