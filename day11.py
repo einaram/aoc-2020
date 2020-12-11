@@ -1,5 +1,5 @@
 import numpy as np
-
+# nansum is ber
 def read_rulesfile(datatype='test'):
     with open(f"input/11.{datatype}.in") as infile:
         data = infile.read().split("\n")
@@ -18,13 +18,13 @@ def subset_slice(idx, xy_max):
     return np.s_[xmin:xmax, ymin:ymax]
 
 
-def rules1(idx, x, layout, new_layout):
+def rules1(idx, x, layout):
     s = subset_slice(idx, layout.shape)
     if x == 0 and np.nansum(layout[s]) == 0:
-        new_layout[idx] = 1
+        x = 1
     elif x == 1 and np.nansum(layout[s]) > 4:
-        new_layout[idx] = 0
-    return new_layout
+        x = 0
+    return x
 
 
 def check_directions(arr,idx):
@@ -53,21 +53,21 @@ def check_directions(arr,idx):
     return count
 
 
-def rules2(idx, x, layout, new_layout):
+def rules2(idx, x, layout):
     seen = check_directions(layout, idx)
     if x == 0 and seen == 0:
-        new_layout[idx] = 1
+        x = 1
     elif x == 1 and seen >= 5:
-        new_layout[idx] = 0
-    return new_layout
+        x = 0
+    return x
 
 
-def apply_rules(apply_rules, datafile='data'):
+def apply_rules(rule_set, datafile='data'):
     layout = read_rulesfile(datafile)
     while True:
         new_l = np.copy(layout)
         for idx, x in np.ndenumerate(layout):
-            new_l = apply_rules(idx, x, layout, new_l)
+            new_l[idx] = rule_set(idx, x, layout)
         # new_l = [apply_rules(idx, x, layout, new_l)
         #      for idx, x in np.ndenumerate(layout)]
         # print(new_layout)
