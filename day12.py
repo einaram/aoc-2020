@@ -1,8 +1,4 @@
 
-from typing import ValuesView
-import numpy as np
-import math
-
 def read_indata(datatype='test'):
     with open(f"input/12.{datatype}.txt") as infile:
         data = infile.read().split("\n")
@@ -28,11 +24,11 @@ def rotate_wp(e, n, instr):
         d = -d%360
 
     if d == 90:
-        e,n = e,-n 
+        e,n = n,-e 
     elif d == 180:
         e, n = -e, -n
     elif d == 270:
-        e, n = -e, n
+        e, n = -n, e
     return e, n
 
 def part1(data):
@@ -82,7 +78,8 @@ def part2(data):
             e, n = rotate_wp(e, n, instr)
         elif instr[0] == 'F':
             ship = move(e, n, ship, instr[1])
-    print(e,n)
+
+
     print(sum((abs(x) for x in ship)))
     return sum((abs(x) for x in ship))
 
@@ -90,4 +87,4 @@ assert part1('test')  == 25
 assert part1('input') == 1294
 
 assert part2('test') == 286
-part2('input')
+assert part2('input') == 20592
