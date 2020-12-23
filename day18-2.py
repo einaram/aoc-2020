@@ -15,29 +15,27 @@ def do_op(p1, op, p2):
 
 
 def calc_replace(in_str):
-    while inner := re.search(r"\([\d\s\+]+\)", in_str):
-        inner_c = inner.group().strip(')').strip('(').strip()
-        inner_c = calc_inner_add(inner_c)
-        inner_c = calc_inner_par(inner_c)
-        in_str = in_str[0:inner.span()[0]] + inner_c + in_str[inner.span()[1]:]
-    while inner := re.search(r"\([\d\s\*\+]+\)", in_str):
-        inner_c = inner.group().strip(')').strip('(').strip()
-        inner_c = calc_inner_add(inner_c)
-        inner_c = calc_inner_par(inner_c)
-        in_str = in_str[0:inner.span()[0]] + inner_c + in_str[inner.span()[1]:]
+    in_str = calc_parentheses(in_str, op=r'\+')
+    in_str = calc_parentheses(in_str, op=r'\*\+')
     return calc_inner_par(in_str)
 
-def calc_inner_add(inr):
-    while part := re.search(r'(\d+) (\+) (\d+)', inr):
-        inr = inr[0:part.span()[0]] + do_op(*
-                                            part.groups()) + inr[part.span()[1]:]
-    return inr
+
+def calc_parentheses(in_str, op):
+    while inner := re.search(rf"\([\d\s{op}]+\)", in_str):
+        inner_c = inner.group().strip(')').strip('(').strip()
+        inner_c = calc_inner_par(inner_c, )
+        in_str = in_str[0:inner.span()[0]] + inner_c + in_str[inner.span()[1]:]
+    return in_str
+
 
 def calc_inner_par(inr):
-    while part := re.search(r'(\d+) (\+) (\d+)', inr):
-        inr = inr[0:part.span()[0]] + do_op(*
-                                            part.groups()) + inr[part.span()[1]:]
-    while part := re.search(r'(\d+) ([*+]) (\d+)', inr):
+    inr = calc_inner_par_op(inr, '\+')
+    inr = calc_inner_par_op(inr, '[*+]')
+    return inr
+
+
+def calc_inner_par_op(inr, op):
+    while part := re.search(fr'(\d+) ({op}) (\d+)', inr):
         inr = inr[0:part.span()[0]] + do_op(*
                                             part.groups()) + inr[part.span()[1]:]
     return inr
@@ -51,8 +49,7 @@ assert calc_replace(
     "((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2") == '23340'
 
 
-s = sum([int(calc_replace(x))  for x in read_indata(datatype='input')]) 
+s = sum([int(calc_replace(x)) for x in read_indata(datatype='input')])
 
 assert s == 93000656194428
 print(s)
-
