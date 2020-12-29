@@ -2,7 +2,7 @@
 import numpy as np
 import random
 import re
-
+from scipy import ndimage
 
 def read_indata(datatype='test'):
     with open(f"input/20.{datatype}.txt") as infile:
@@ -36,23 +36,29 @@ def get_sides(arr):
     return frozenset([get_side(side, arr) for side in SIDE_SLICE])
 
 
+def tile_orientations(tile):
+    for r in range(4):
+        a = np.rot90(tile, r)
+        yield a
+        yield np.fliplr(a)
+        yield np.flipud(a)
+        yield np.flipud(np.fliplr(a))
+
 def rotate_match(images, match_id, curr_id, side):
     to_match = get_side(side, images[curr_id])
     adj_side = OPPOSITES[side]
 
-    for action in [\
-            np.rot90, np.rot90, np.rot90, np.rot90, \
-            np.flip, np.rot90, np.rot90, np.rot90, np.rot90, np.flip,\
-            np.fliplr, np.rot90, np.rot90, np.rot90, np.rot90,np.fliplr, \
-            np.flipud, np.rot90, np.rot90, np.rot90, np.rot90]:        # 4 rot90 to "reset".
-        matched_side = get_side(adj_side, images[match_id])
+    matched_side = get_side(adj_side, images[match_id])
+    if matched_side == to_match:
+        return images
+    for tile in tile_orientations(images[match_id]):
+        matched_side = get_side(adj_side, tile)
+        if match_id in grid.values():
+            print("rotating fixed part")
         if matched_side == to_match:
+            images[match_id] = tile
             return images
-        else:
-            if match_id in grid.values():
-                print("rotating fixed part")
 
-            images[match_id] = action(images[match_id])
     else:
         print("NO MATCH")
         return images
@@ -165,32 +171,49 @@ img, ids = build_matrix(grid, images)
 
 p1 = ids[0,0]*ids[-1,0]*ids[0,-1]*ids[-1,-1] # read corners: 3607*1697*1399*2731 -> 23386616781851
 print('p1', p1)
-# print(ids)
+# assert int(p1) ==  20899048083289
+assert int(p1) ==  23386616781851
 
 # %%
 img, ids = build_matrix(grid, images, cut=True)
 
 
 def find_monster(img):
-    monster_parts = 15
-    monster_re = re.compile(r""".{18}1.+\n
-                            .*1.{4}11.{4}11.{4}111.*\n
-                            .*1..1..1..1..1..1""", re.X)
-    for action in [\
-            np.rot90, np.rot90, np.rot90, np.rot90, \
-            np.flip, np.rot90, np.rot90, np.rot90, np.rot90, np.flip,\
-            np.fliplr, np.rot90, np.rot90, np.rot90, np.rot90,np.fliplr, \
-            np.flipud, np.rot90, np.rot90, np.rot90, np.rot90]:
-        img = action(img)
-        img_str = np.array_str(img).replace(' ', '').replace('[', '').replace(']', '')
 
-        if monster_re.findall(img_str):
-            return len(monster_re.findall(img_str))*monster_parts 
+
+    sea_monster = np.array(\
+       [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+        [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+        [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0]])
+
+
+    def count_monsters(image, monster=sea_monster):
+        return (ndimage.correlate(image, monster, mode='constant') == monster.sum()).sum()
+
+
+    monster_re=fr""".{*.{18}1.+\n
+                    .*1.{4}11.{4}11.{4}111.*\n
+                    .*1..1..1..1..1..1"""
+    monster_re_c = re.compile(monster_re, re.X)
+    monster_parts = 15
+    for tile in tile_orientations(img):
+        img = tile
+        m=count_monsters(img)
+        img_str = str(img.tolist()).replace(' ', '').replace('],', '\n').replace('[', '').replace(']', '').replace(',','')
+        if m:
+            print("m :",m)
+            f = open('imgstr.txt', 'a'); f.write(img_str); f.close()
+        #     return m*monster_parts
+        if monsters := monster_re.findall(img_str):
+
+            print("re:",len(monster_re.findall(img_str))*monster_parts, "m:", m)
     else:
         print('No monsters')
+
 
 monster_parts = find_monster(img)
 
 roughness = np.sum(img) - monster_parts
-roughness
+print(roughness)
+# assert int(roughness) == 273 # test
 # %%
