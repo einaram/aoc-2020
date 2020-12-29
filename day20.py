@@ -191,22 +191,32 @@ def find_monster(img):
         return (ndimage.correlate(image, monster, mode='constant') == monster.sum()).sum()
 
 
-    monster_re=fr""".{*.{18}1.+\n
-                    .*1.{4}11.{4}11.{4}111.*\n
-                    .*1..1..1..1..1..1"""
-    monster_re_c = re.compile(monster_re, re.X)
+    monster_re1=r"{s}.{{18}}1.+?\n"
+    monster_re2=r"{s}1.{{4}}11.{{4}}11.{{4}}111.*?\n"
+    monster_re3=r"{s}.1..1..1..1..1..1..."
+    monster_re = monster_re1 + monster_re2 +monster_re3
+    monster_re_c = re.compile(monster_re.format(s='.*'), re.X)
     monster_parts = 15
     for tile in tile_orientations(img):
         img = tile
         m=count_monsters(img)
         img_str = str(img.tolist()).replace(' ', '').replace('],', '\n').replace('[', '').replace(']', '').replace(',','')
         if m:
-            print("m :",m)
+            z = 0
+            for x in range(len(img[0])-20):
+                s = f'.{{{x}}}'
+                z += len(re.findall(monster_re.format(s=s),img_str))
+            
+            print("reddit:",m,"regex:", z)
             f = open('imgstr.txt', 'a'); f.write(img_str); f.close()
-        #     return m*monster_parts
-        if monsters := monster_re.findall(img_str):
-
-            print("re:",len(monster_re.findall(img_str))*monster_parts, "m:", m)
+            return m*monster_parts
+        if monsters := monster_re_c.findall(img_str):
+            z = 0
+            for x in range(len(img[0])-20):
+                s = f'.{{{x}}}'
+                z += len(re.findall(monster_re.format(s=s),img_str))
+            print(f'z',z)
+            # print("re:",len(monster_re_c.findall(img_str))*monster_parts, "m:", m)
     else:
         print('No monsters')
 
