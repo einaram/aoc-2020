@@ -1,15 +1,15 @@
 # %%
 from scipy.sparse import dok_matrix
-import re
 import numpy as np
 import random
+import re
 
 
 def read_indata(datatype='test'):
     with open(f"input/20.{datatype}.txt") as infile:
         images = {}
         sides_dict = {}
-        for image in infile.read().split("\n\n"):
+        for image in infile.read().replace('#', '1').replace('.', '0').split("\n\n"):
             img = [list(x) for x in image[11:].split('\n')]
             images[image[5:9]] = np.array(img)
             sides_dict[image[5:9]] = get_sides(images[image[5:9]])
@@ -23,10 +23,10 @@ SIDE_SLICE = {
     'top': np.s_[0, :],
     'bottom': np.s_[-1, :]
 }
-OPPOSITES = {'left':'right',
-            'right': 'left',
-            'top': 'bottom',
-            'bottom': 'top'}
+OPPOSITES = {'left': 'right',
+             'right': 'left',
+             'top': 'bottom',
+             'bottom': 'top'}
 
 
 def get_side(side, arr):
@@ -36,55 +36,56 @@ def get_side(side, arr):
 def get_sides(arr):
     return frozenset([get_side(side, arr) for side in SIDE_SLICE])
 
-def rotate(images, matched,curr_id, side):
-    to_match = get_side(side,images[curr_id])
+
+def rotate_match(images, match_id, curr_id, side):
+    to_match = get_side(side, images[curr_id])
     adj_side = OPPOSITES[side]
 
-    for action in [np.rot90,np.rot90, np.rot90, np.rot90, np.flip, np.rot90,np.rot90, np.rot90, np.rot90, np.fliplr, np.rot90,np.rot90, np.rot90, np.rot90]:
+    for action in [np.rot90, np.rot90, np.rot90, np.rot90, np.flip, np.rot90, np.rot90, np.rot90, np.rot90, np.fliplr, np.rot90, np.rot90, np.rot90, np.rot90]:
         # 4 rot90 to "reset". np.array is a dummy
-        matched_side = get_side(adj_side, images[matched] )
+        matched_side = get_side(adj_side, images[match_id])
         if matched_side == to_match:
             return images
         else:
-            images[matched] = action(images[matched])
+            if match_id in grid.values():
+                print("rotating fixed part")
+
+            images[match_id] = action(images[match_id])
     else:
         print("NO MATCH")
         return images
 
 
 def find_surrounding(images, sides_dict, grid, curr_id):
-    # curr_id = grid[coord]
-    coord = [k for k, v in grid.items() if v == curr_id][0]
+    x, y = [k for k, v in grid.items() if v == curr_id][0]
     # top:
     side = 'top'
-    t= find_side_match(curr_id, get_side(side, images[curr_id]), sides_dict)
+    t = find_side_match(curr_id, get_side(side, images[curr_id]), sides_dict)
     if t:
-        images = rotate(images, t[0],curr_id, side )
-        grid[(coord[0], coord[1]+1)] = t[0]
-
-
-    r  = find_side_match(curr_id,  get_side(
+        images = rotate_match(images, t[0], curr_id, side)
+        grid[(x, y-1)] = t[0]
+    # right
+    r = find_side_match(curr_id,  get_side(
         'right', images[curr_id]), sides_dict)
     if r:
-        images = rotate(images, r[0],curr_id, 'right' )
-        grid[(coord[0]+1, coord[1])] = r[0]
+        images = rotate_match(images, r[0], curr_id, 'right')
+        grid[(x+1, y)] = r[0]
 
-    d  = find_side_match(curr_id,  get_side(
+    d = find_side_match(curr_id,  get_side(
         'bottom', images[curr_id]), sides_dict)
     if d:
-        images = rotate(images, d[0],curr_id, 'bottom' )
-        grid[(coord[0], coord[1]-1)] = d[0]
+        images = rotate_match(images, d[0], curr_id, 'bottom')
+        grid[(x, y+1)] = d[0]
 
-    l  = find_side_match(curr_id,  get_side(
+    l = find_side_match(curr_id,  get_side(
         'left', images[curr_id]), sides_dict)
     if l:
-        images = rotate(images, l[0],curr_id, 'left' )
-        grid[(coord[0]-1, coord[1])] = l[0]
+        images = rotate_match(images, l[0], curr_id, 'left')
+        grid[(x-1, y)] = l[0]
     return grid, images
 
 
 def find_side_match(search_id, side, sides_dict):
-    # top(images[curr_id])
     match = [k for k, v in sides_dict.items(
     ) if k != search_id and (side in v or side[::-1] in v)]
     if len(match) > 1:
@@ -103,40 +104,115 @@ parts = list(images.keys())
 grid = {}
 grid[(0, 0)] = parts[0]
 while len(grid) < len(sides):
+    # lazy but slow way to check all
     partid = random.choice(list(grid.values()))
     grid, images = find_surrounding(images, sides, grid,  partid)
-    print(partid)
 
-
-# zero-index grid:
-x_offs = abs(min([x[0] for x in grid]))
-y_offs = abs(min([x[1] for x in grid]))
-
-
-def rename(key, dx, dy):
-    x = key[0]+dx
-    y = key[1]+dy
-    return (x, y)
-
-
-# grid = {rename(k, x_offs, y_offs): v for k, v in grid.items()}
 # %%
-import matplotlib.pyplot as plt
-plt.scatter(*zip(*grid.keys()))
-for i, kv  in enumerate(grid.items()):
-    k,v = kv
-    plt.annotate(v, (k[0], k[1]))
-plt.show()
+
+
+def zero_index_grid(grid):
+    # zero-index grid:
+    x_offs = abs(min([x[0] for x in grid]))
+    y_offs = abs(min([x[1] for x in grid]))
+
+    def rename(key, dx, dy):
+        x = key[0]+dx
+        y = key[1]+dy
+        return (x, y)
+
+    return {rename(k, x_offs, y_offs): v for k, v in grid.items()}
+
+
+grid = zero_index_grid(grid)
+# %%
+
+
+def part1(grid):
+    import matplotlib.pyplot as plt
+    plt.scatter(*zip(*grid.keys()))
+    for i, kv in enumerate(grid.items()):
+        k, v = kv
+        plt.annotate(v, (k[0], k[1]))
+    plt.show()
+# part1(grid)
 # read corners from plot: 3607*1697*1399*2731 -> 23386616781851
+# ... or from "out" below
 # %%
 
-x_max = abs(max([x[0] for x in grid]))
-y_max = abs(max([x[1] for x in grid]))
 
-
+x_max = abs(max([x[0] for x in grid]))+1
+y_max = abs(max([x[1] for x in grid]))+1
 out = dok_matrix((x_max, y_max), dtype=int)
 out._update(grid)
-out.todense()
-out
+out = out.todense()  # flipped wrong compated to images. grid is correct
+
+# %%
+
+
+def build_matrix(grid, images, cut=False):
+    parts_size = max([x[0] for x in grid])+1
+    sub_size = len(images[list(images)[0]][0])
+    if cut:
+        sub_size = sub_size-2
+    size = parts_size*sub_size
+    image = np.zeros((size, size), dtype=int)
+    ids = np.zeros((parts_size, parts_size))
+
+    for x, y in grid:
+        dx = np.s_[x*sub_size: (1+x)*sub_size]
+        dy = np.s_[y*sub_size:(1+y)*sub_size]
+        # print(grid[(x, y)], dx, dy)
+        if cut:
+            image[dy, dx] = images[grid[(x, y)]][1:-1, 1:-1]
+
+        else:
+            image[dy, dx] = images[grid[(x, y)]]
+        ids[(x, y)] = grid[(x, y)]
+
+    return image, ids
+
+
+img, ids = build_matrix(grid, images)
+#
+print(ids)
+
+# %%
+img, ids = build_matrix(grid, images, cut=True)
+
+
+def find_monster(img):
+    monster_parts = 15
+    monster_re = re.compile(r""".{18}1.+\n
+                            .*1.{4}11.{4}11.{4}111.*\n
+                            .*.1..1..1..1..1..1""", re.X)
+    for action in [\
+            np.rot90, np.rot90, np.rot90, np.rot90, \
+            np.flip, np.rot90, np.rot90, np.rot90, np.rot90, np.flip,\
+            np.fliplr, np.rot90, np.rot90, np.rot90, np.rot90,np.fliplr, \
+            np.flipud, np.rot90, np.rot90, np.rot90, np.rot90]:
+        img = action(img)
+        img_str = np.array_str(img).replace(' ', '').replace('[', '').replace(']', '')
+
+        if monster_re.findall(img_str):
+            return len(monster_re.findall(img_str))*monster_parts 
+            break
+            # break
+    else:
+        print('No monsters')
+    return 
+
+
+monster_parts = find_monster(img)
+
+roughness = np.sum(img) - monster_parts
+roughness
+# %%
+
+monster = """\
+                # 
+#    ##    ##    ###
+#  #  #  #  #  #   
+"""
 
 # %%
