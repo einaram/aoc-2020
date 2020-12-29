@@ -1,5 +1,4 @@
 # %%
-from scipy.sparse import dok_matrix
 import numpy as np
 import random
 import re
@@ -41,8 +40,11 @@ def rotate_match(images, match_id, curr_id, side):
     to_match = get_side(side, images[curr_id])
     adj_side = OPPOSITES[side]
 
-    for action in [np.rot90, np.rot90, np.rot90, np.rot90, np.flip, np.rot90, np.rot90, np.rot90, np.rot90, np.fliplr, np.rot90, np.rot90, np.rot90, np.rot90]:
-        # 4 rot90 to "reset". np.array is a dummy
+    for action in [\
+            np.rot90, np.rot90, np.rot90, np.rot90, \
+            np.flip, np.rot90, np.rot90, np.rot90, np.rot90, np.flip,\
+            np.fliplr, np.rot90, np.rot90, np.rot90, np.rot90,np.fliplr, \
+            np.flipud, np.rot90, np.rot90, np.rot90, np.rot90]:        # 4 rot90 to "reset".
         matched_side = get_side(adj_side, images[match_id])
         if matched_side == to_match:
             return images
@@ -112,40 +114,27 @@ while len(grid) < len(sides):
 
 
 def zero_index_grid(grid):
-    # zero-index grid:
-    x_offs = abs(min([x[0] for x in grid]))
-    y_offs = abs(min([x[1] for x in grid]))
-
     def rename(key, dx, dy):
         x = key[0]+dx
         y = key[1]+dy
         return (x, y)
-
+    # make grid zero-index:
+    x_offs = abs(min([x[0] for x in grid]))
+    y_offs = abs(min([x[1] for x in grid]))
     return {rename(k, x_offs, y_offs): v for k, v in grid.items()}
 
 
 grid = zero_index_grid(grid)
 # %%
 
-
-def part1(grid):
+def plot_part1(grid):
     import matplotlib.pyplot as plt
     plt.scatter(*zip(*grid.keys()))
     for i, kv in enumerate(grid.items()):
         k, v = kv
         plt.annotate(v, (k[0], k[1]))
     plt.show()
-# part1(grid)
-# read corners from plot: 3607*1697*1399*2731 -> 23386616781851
-# ... or from "out" below
-# %%
-
-
-x_max = abs(max([x[0] for x in grid]))+1
-y_max = abs(max([x[1] for x in grid]))+1
-out = dok_matrix((x_max, y_max), dtype=int)
-out._update(grid)
-out = out.todense()  # flipped wrong compated to images. grid is correct
+# plot_part1(grid)
 
 # %%
 
@@ -162,7 +151,6 @@ def build_matrix(grid, images, cut=False):
     for x, y in grid:
         dx = np.s_[x*sub_size: (1+x)*sub_size]
         dy = np.s_[y*sub_size:(1+y)*sub_size]
-        # print(grid[(x, y)], dx, dy)
         if cut:
             image[dy, dx] = images[grid[(x, y)]][1:-1, 1:-1]
 
@@ -174,8 +162,10 @@ def build_matrix(grid, images, cut=False):
 
 
 img, ids = build_matrix(grid, images)
-#
-print(ids)
+
+p1 = ids[0,0]*ids[-1,0]*ids[0,-1]*ids[-1,-1] # read corners: 3607*1697*1399*2731 -> 23386616781851
+print('p1', p1)
+# print(ids)
 
 # %%
 img, ids = build_matrix(grid, images, cut=True)
@@ -185,7 +175,7 @@ def find_monster(img):
     monster_parts = 15
     monster_re = re.compile(r""".{18}1.+\n
                             .*1.{4}11.{4}11.{4}111.*\n
-                            .*.1..1..1..1..1..1""", re.X)
+                            .*1..1..1..1..1..1""", re.X)
     for action in [\
             np.rot90, np.rot90, np.rot90, np.rot90, \
             np.flip, np.rot90, np.rot90, np.rot90, np.rot90, np.flip,\
@@ -196,23 +186,11 @@ def find_monster(img):
 
         if monster_re.findall(img_str):
             return len(monster_re.findall(img_str))*monster_parts 
-            break
-            # break
     else:
         print('No monsters')
-    return 
-
 
 monster_parts = find_monster(img)
 
 roughness = np.sum(img) - monster_parts
 roughness
-# %%
-
-monster = """\
-                # 
-#    ##    ##    ###
-#  #  #  #  #  #   
-"""
-
 # %%
