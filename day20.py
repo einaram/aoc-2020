@@ -167,7 +167,7 @@ def build_matrix(grid, images, cut=False):
     return image, ids
 
 
-img, ids = build_matrix(grid, images)
+img_uncut, ids = build_matrix(grid, images)
 
 p1 = ids[0,0]*ids[-1,0]*ids[0,-1]*ids[-1,-1] # read corners: 3607*1697*1399*2731 -> 23386616781851
 print('p1', p1)
@@ -185,8 +185,6 @@ def find_monster(img):
        [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
         [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1],
         [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0]])
-
-
     def count_monsters(image, monster=sea_monster):
         return (ndimage.correlate(image, monster, mode='constant') == monster.sum()).sum()
 
@@ -195,16 +193,13 @@ def find_monster(img):
     monster_re2=r"{s0}1....11....11....111{e}\n"
     monster_re3=r"{s0}.1..1..1..1..1..1...{e}\n"
     monster_re = monster_re1 + monster_re2 +monster_re3
-    e='.*'
-    monster_re_c = re.compile(monster_re.format(s0='.*', s1='.*', e=e), re.X)
+    monster_re_c = re.compile(monster_re.format(s0='.*', s1='.*', e='.*'), re.X)
     monster_parts = 15
-    for tile in tile_orientations(img):
-        img = tile
+    for img in tile_orientations(img):
         m=count_monsters(img)
-        img_str = str(img.tolist()).replace(' ', '').replace('],', '\n').replace('[', '').replace(']', '').replace(',','')
-        f = open('imgstr.txt', 'w') 
-        
-        if m:
+        img_str = str(img.tolist()).replace(' ', '').replace('],', '\n').replace('[', '').replace(']', '').replace(',','') 
+        # Scipy from reddit + custom regex:      
+        if m and False:
             z = 0
             for x in range(len(img[0])-20):
                 s0 = f'.{{{x}}}'
@@ -212,23 +207,24 @@ def find_monster(img):
                 e= f".{{{len(img[0])-20-x}}}"
                 dz=re.findall(monster_re.format(s0=s0, s1=s1, e=e),img_str)
                 z += len(dz)
-                if dz:
-                    f.write(f"z {x}:\n")
-                    f.write(f'\n'.join(dz)+'\n\n\n')
             
             print("reddit:",m,"regex:", z)
-            f.close()
             print(re.compile(monster_re.format(s1=s1, s0=s0, e=e)))
             return m*monster_parts
+        
+        # Pure regex+loop
+        if monsters := monster_re_c.findall(img_str):
+            z = 0
+            for x in range(len(img[0])-20):
+                s0 = f'.{{{x}}}'
+                s1 = f'(?:^|\n).{{{x}}}'
+                e= f".{{{len(img[0])-20-x}}}"
+                dz=re.findall(monster_re.format(s0=s0, s1=s1, e=e),img_str)
+                z += len(dz)
+            if z>0:
+                print(z)
+                return z*monster_parts
 
-        # if monsters := monster_re_c.findall(img_str):
-        #     z = 0
-        #     for x in range(len(img[0])-20):
-        #         s1 = f'^|\n.{{{x}}}'
-        #         s = f'.{{{x}}}'
-        #         z += len(re.findall(monster_re.format(s=s, s1=s1),img_str))
-        #     print(f'z',z)
-            # print("re:",len(monster_re_c.findall(img_str))*monster_parts, "m:", m)
     else:
         print('No monsters')
 
@@ -238,4 +234,5 @@ monster_parts = find_monster(img)
 roughness = np.sum(img) - monster_parts
 print(roughness)
 # assert int(roughness) == 273 # test
+assert int(roughness) == 2376 # full
 # %%
