@@ -4,7 +4,7 @@ import random
 import re
 from scipy import ndimage
 
-def read_indata(datatype='test'):
+def read_indata(datatype='input'):
     with open(f"input/20.{datatype}.txt") as infile:
         images = {}
         sides_dict = {}
@@ -191,31 +191,43 @@ def find_monster(img):
         return (ndimage.correlate(image, monster, mode='constant') == monster.sum()).sum()
 
 
-    monster_re1=r"{s}.{{18}}1.+?\n"
-    monster_re2=r"{s}1.{{4}}11.{{4}}11.{{4}}111.*?\n"
-    monster_re3=r"{s}.1..1..1..1..1..1..."
+    monster_re1=r"{s1}..................1.{e}\n"
+    monster_re2=r"{s0}1....11....11....111{e}\n"
+    monster_re3=r"{s0}.1..1..1..1..1..1...{e}\n"
     monster_re = monster_re1 + monster_re2 +monster_re3
-    monster_re_c = re.compile(monster_re.format(s='.*'), re.X)
+    e='.*'
+    monster_re_c = re.compile(monster_re.format(s0='.*', s1='.*', e=e), re.X)
     monster_parts = 15
     for tile in tile_orientations(img):
         img = tile
         m=count_monsters(img)
         img_str = str(img.tolist()).replace(' ', '').replace('],', '\n').replace('[', '').replace(']', '').replace(',','')
+        f = open('imgstr.txt', 'w') 
+        
         if m:
             z = 0
             for x in range(len(img[0])-20):
-                s = f'.{{{x}}}'
-                z += len(re.findall(monster_re.format(s=s),img_str))
+                s0 = f'.{{{x}}}'
+                s1 = f'(?:^|\n).{{{x}}}'
+                e= f".{{{len(img[0])-20-x}}}"
+                dz=re.findall(monster_re.format(s0=s0, s1=s1, e=e),img_str)
+                z += len(dz)
+                if dz:
+                    f.write(f"z {x}:\n")
+                    f.write(f'\n'.join(dz)+'\n\n\n')
             
             print("reddit:",m,"regex:", z)
-            f = open('imgstr.txt', 'a'); f.write(img_str); f.close()
+            f.close()
+            print(re.compile(monster_re.format(s1=s1, s0=s0, e=e)))
             return m*monster_parts
-        if monsters := monster_re_c.findall(img_str):
-            z = 0
-            for x in range(len(img[0])-20):
-                s = f'.{{{x}}}'
-                z += len(re.findall(monster_re.format(s=s),img_str))
-            print(f'z',z)
+
+        # if monsters := monster_re_c.findall(img_str):
+        #     z = 0
+        #     for x in range(len(img[0])-20):
+        #         s1 = f'^|\n.{{{x}}}'
+        #         s = f'.{{{x}}}'
+        #         z += len(re.findall(monster_re.format(s=s, s1=s1),img_str))
+        #     print(f'z',z)
             # print("re:",len(monster_re_c.findall(img_str))*monster_parts, "m:", m)
     else:
         print('No monsters')
